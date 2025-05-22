@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>每日紀錄</title>
+  <style>
+    body { font-family: Arial; max-width: 600px; margin: auto; padding: 2em; }
+    label { display: block; margin-top: 1em; }
+    input, textarea, button { width: 100%; padding: 0.5em; margin-top: 0.3em; }
+    .msg { margin-top: 1em; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h2>每日營養體重紀錄</h2>
+
+<form id="recordForm">
+  <label>日期 <input type="date" name="date" required /></label>
+  <label>體重 (kg) <input type="number" step="0.1" name="weight" required /></label>
+  <label>熱量 (kcal) <input type="number" name="calories" required /></label>
+  <label>蛋白質 (g) <input type="number" step="0.1" name="protein" required /></label>
+  <label>碳水 (g) <input type="number" step="0.1" name="carbs" required /></label>
+  <label>脂肪 (g) <input type="number" step="0.1" name="fat" required /></label>
+  <label>運動消耗 (kcal) <input type="number" name="exercise" /></label>
+  <label>備註 <textarea name="notes"></textarea></label>
+  <button type="submit">送出紀錄</button>
+</form>
+
+<div class="msg" id="msg"></div>
+
+<script>
+  document.querySelector('input[name="date"]').valueAsDate = new Date();
+
+  const form = document.getElementById('recordForm');
+  const msg = document.getElementById('msg');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '傳送中...';
+    msg.style.color = 'black';
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    // 將文字轉數字
+    data.weight = parseFloat(data.weight);
+    data.calories = parseInt(data.calories);
+    data.protein = parseFloat(data.protein);
+    data.carbs = parseFloat(data.carbs);
+    data.fat = parseFloat(data.fat);
+    data.exercise = data.exercise ? parseInt(data.exercise) : 0;
+
+    try {
+      const response = await fetch('https://script.google.com/macros/s/AKfycbxanHopL9LAdeTWqw0fG-F3uwTruQD6PkLz-DVR7oJlfYV9o0Q_sHJuCmUrXBifoQmn2g/exec', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        msg.textContent = '✅ 紀錄成功！';
+        msg.style.color = 'green';
+        form.reset();
+        form.date.valueAsDate = new Date();
+      } else {
+        msg.textContent = '❌ 發生錯誤：' + (result.message || '未知錯誤');
+        msg.style.color = 'red';
+      }
+    } catch (err) {
+      msg.textContent = '🌐 網路錯誤，無法送出';
+      msg.style.color = 'red';
+    }
+  });
+</script>
+
+</body>
+</html>
